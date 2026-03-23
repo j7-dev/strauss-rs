@@ -1,0 +1,20 @@
+{
+    "name": "test/simple-project",
+    "autoload": {
+        "psr-4": {
+            "Test\\SimpleProject\\": "src/"
+        }
+    },
+    "require": {
+        "acme/greeter": "^1.0"
+    },
+    "extra": {
+        "strauss": {
+            "target_directory": "vendor-prefixed",
+            "namespace_prefix": "Test\\SimpleProject\\Deps\\",
+            "classmap_prefix": "Test_SimpleProject_",
+            "constant_prefix": "TSP_",
+            "delete_vendor_packages": false
+        }
+    }
+}

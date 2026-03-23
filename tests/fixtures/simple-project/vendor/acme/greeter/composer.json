@@ -1,0 +1,11 @@
+{
+    "name": "acme/greeter",
+    "version": "1.0.0",
+    "autoload": {
+        "psr-4": {
+            "Acme\\Greeter\\": "src/"
+        }
+    },
+    "require": {},
+    "license": "MIT"
+}

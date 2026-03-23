@@ -1,0 +1,4 @@
+<?php
+// ClassLoader.php - This is a placeholder.
+// The actual Composer ClassLoader.php should be copied from the vendor directory.
+// strauss-rs will copy it from vendor/composer/ClassLoader.php during autoloader generation.

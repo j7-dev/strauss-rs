@@ -107,12 +107,23 @@ impl Pipeline {
         // ═══════════════════════════════════════════
         let phase2_start = Instant::now();
 
-        // 2a. Parse all PHP files in parallel, extract symbols
-        self.discovered_symbols = symbol_scanner::scan_files_for_symbols(
+        // 2a. Parse all PHP files in parallel, extract symbols + per-file references
+        let (symbols, file_refs) = symbol_scanner::scan_files_for_symbols(
             &self.discovered_files,
             &self.config,
         )?;
+        self.discovered_symbols = symbols;
         info!("Found {} symbols", self.discovered_symbols.len());
+
+        // Merge per-file references into DiscoveredFiles
+        let refs_count = file_refs.len();
+        for entry in file_refs.into_iter() {
+            let (path, refs) = entry;
+            if let Some(file) = self.discovered_files.get_file_mut(&path) {
+                file.file_references = Some(refs);
+            }
+        }
+        info!("Attached references to {} files", refs_count);
 
         // 2b. Add PSR-4 namespace symbols
         for pkg in &self.dependency_tree {

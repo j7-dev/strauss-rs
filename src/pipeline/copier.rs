@@ -49,6 +49,10 @@ pub fn copy_and_prefix(
 }
 
 /// Process a single file: read → replace → write to target.
+///
+/// Uses per-file filtered replacement when `file_references` is available
+/// (optimized path with tiny Aho-Corasick). Falls back to full replacement
+/// for files without reference data.
 fn process_single_file(
     file: &crate::types::file::DiscoveredFile,
     symbols: &DiscoveredSymbols,
@@ -63,7 +67,15 @@ fn process_single_file(
     if file.is_php_file() && file.do_prefix {
         // Read, replace, write
         let contents = fs::read_to_string(&file.source_absolute_path)?;
-        let updated = replacer.replace_in_string(&contents, symbols)?;
+
+        let updated = if let Some(ref file_refs) = file.file_references {
+            // Optimized path: only replace symbols this file actually references
+            let filtered = replacer.filtered_for_file(file_refs);
+            replacer.replace_in_string_filtered(&contents, &filtered)?
+        } else {
+            // Fallback: use full replacement (project files without reference data)
+            replacer.replace_in_string(&contents, symbols)?
+        };
 
         fs::write(&file.absolute_target_path, &updated)?;
 

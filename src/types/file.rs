@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use super::file_references::FileReferences;
 
 /// A file discovered in the project, either a project source file or a vendor file.
 ///
@@ -46,6 +47,10 @@ pub struct DiscoveredFile {
 
     /// Keys of symbols discovered in this file (original fully-qualified names).
     pub discovered_symbols: Vec<String>,
+
+    /// Per-file reference data for optimized replacement filtering.
+    /// Populated during Phase 2 symbol scanning.
+    pub file_references: Option<FileReferences>,
 }
 
 impl DiscoveredFile {
@@ -68,6 +73,7 @@ impl DiscoveredFile {
             package_name: None,
             package_relative_path: None,
             discovered_symbols: Vec::new(),
+            file_references: None,
         }
     }
 
@@ -108,6 +114,7 @@ impl DiscoveredFile {
             package_name: Some(package_name),
             package_relative_path,
             discovered_symbols: Vec::new(),
+            file_references: None,
         }
     }
 

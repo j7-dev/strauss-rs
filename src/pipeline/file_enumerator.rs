@@ -66,6 +66,7 @@ pub fn enumerate_files(
                 package_name: Some(package.name.clone()),
                 package_relative_path: Some(package_relative),
                 discovered_symbols: Vec::new(),
+                file_references: None,
             };
 
             files.add(file);

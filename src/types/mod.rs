@@ -10,11 +10,13 @@
 
 pub mod discovered_files;
 pub mod file;
+pub mod file_references;
 pub mod symbol;
 pub mod symbols_collection;
 
 // Re-export primary types for convenient access via `use crate::types::*`.
 pub use discovered_files::DiscoveredFiles;
 pub use file::DiscoveredFile;
+pub use file_references::FileReferences;
 pub use symbol::{DiscoveredSymbol, SymbolType};
 pub use symbols_collection::DiscoveredSymbols;

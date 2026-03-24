@@ -1,5 +1,6 @@
 pub mod builtins;
 pub mod php_parser;
+pub mod reference_extractor;
 pub mod symbol_extractor;
 
 pub use builtins::{BUILTIN_CLASSES, BUILTIN_FUNCTIONS, BUILTIN_INTERFACES};

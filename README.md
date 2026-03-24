@@ -53,6 +53,42 @@ cargo build --release
 
 Download from the [Releases](https://github.com/j7-dev/strauss-rs/releases) page.
 
+Choose the archive matching your platform:
+
+| Platform | File |
+|----------|------|
+| Linux (x86_64) | `strauss-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz` |
+| macOS (Intel) | `strauss-vX.Y.Z-x86_64-apple-darwin.tar.gz` |
+| macOS (Apple Silicon) | `strauss-vX.Y.Z-aarch64-apple-darwin.tar.gz` |
+| Windows (x86_64) | `strauss-vX.Y.Z-x86_64-pc-windows-msvc.zip` |
+
+#### Linux / macOS
+
+```bash
+# Download and extract (example: Linux x86_64 v0.1.0)
+tar xzf strauss-v0.1.0-x86_64-unknown-linux-gnu.tar.gz
+
+# Option 1: Move to a directory in your PATH (recommended)
+sudo mv strauss /usr/local/bin/
+strauss --version
+
+# Option 2: Use directly from the current directory
+./strauss --version
+```
+
+#### Windows
+
+1. Extract the `.zip` file
+2. **Option A** - Add to PATH (recommended):
+   - Move `strauss.exe` to a permanent directory (e.g., `C:\Tools\`)
+   - Add that directory to your system PATH:
+     Settings > System > About > Advanced system settings > Environment Variables > Path > New
+   - Open a **new** terminal and run: `strauss --version`
+3. **Option B** - Use the full path directly:
+   ```powershell
+   .\strauss.exe --version
+   ```
+
 ## Usage
 
 ### Quick start

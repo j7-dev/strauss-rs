@@ -53,6 +53,42 @@ cargo build --release
 
 從 [Releases](https://github.com/j7-dev/strauss-rs/releases) 頁面下載。
 
+選擇對應你平台的壓縮檔：
+
+| 平台 | 檔案 |
+|------|------|
+| Linux (x86_64) | `strauss-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz` |
+| macOS (Intel) | `strauss-vX.Y.Z-x86_64-apple-darwin.tar.gz` |
+| macOS (Apple Silicon) | `strauss-vX.Y.Z-aarch64-apple-darwin.tar.gz` |
+| Windows (x86_64) | `strauss-vX.Y.Z-x86_64-pc-windows-msvc.zip` |
+
+#### Linux / macOS
+
+```bash
+# 下載並解壓（範例：Linux x86_64 v0.1.0）
+tar xzf strauss-v0.1.0-x86_64-unknown-linux-gnu.tar.gz
+
+# 方法一：移動到 PATH 目錄中（推薦）
+sudo mv strauss /usr/local/bin/
+strauss --version
+
+# 方法二：直接從當前目錄執行
+./strauss --version
+```
+
+#### Windows
+
+1. 解壓縮 `.zip` 檔案
+2. **方法 A** — 加入 PATH（推薦）：
+   - 將 `strauss.exe` 移動到固定目錄（例如 `C:\Tools\`）
+   - 將該目錄加入系統 PATH：
+     設定 > 系統 > 關於 > 進階系統設定 > 環境變數 > Path > 新增
+   - 開啟**新的**終端機，執行：`strauss --version`
+3. **方法 B** — 直接使用完整路徑：
+   ```powershell
+   .\strauss.exe --version
+   ```
+
 ## 使用方式
 
 ### 快速開始

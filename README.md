@@ -43,7 +43,7 @@ For google/apiclient (28,465 symbols, 33,363 files):
 ### From source (requires Rust toolchain)
 
 ```bash
-git clone https://github.com/nicholasgasior/strauss-rs.git
+git clone https://github.com/j7-dev/strauss-rs.git
 cd strauss-rs
 cargo build --release
 # Binary at: target/release/strauss (or strauss.exe on Windows)
@@ -51,7 +51,7 @@ cargo build --release
 
 ### Pre-built binaries
 
-Download from the [Releases](https://github.com/nicholasgasior/strauss-rs/releases) page.
+Download from the [Releases](https://github.com/j7-dev/strauss-rs/releases) page.
 
 ## Usage
 

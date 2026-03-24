@@ -43,7 +43,7 @@
 ### 從原始碼編譯（需要 Rust 工具鏈）
 
 ```bash
-git clone https://github.com/nicholasgasior/strauss-rs.git
+git clone https://github.com/j7-dev/strauss-rs.git
 cd strauss-rs
 cargo build --release
 # 執行檔位於：target/release/strauss（Windows 為 strauss.exe）
@@ -51,7 +51,7 @@ cargo build --release
 
 ### 預編譯二進位檔
 
-從 [Releases](https://github.com/nicholasgasior/strauss-rs/releases) 頁面下載。
+從 [Releases](https://github.com/j7-dev/strauss-rs/releases) 頁面下載。
 
 ## 使用方式
 

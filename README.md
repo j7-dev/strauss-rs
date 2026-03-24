@@ -6,23 +6,35 @@ Reads `composer.json` configuration, copies vendor dependencies to a target dire
 
 ## Performance
 
-Benchmarked on Windows 11 (same machine, same projects):
+Benchmarked against the **real PHP Strauss** (`BrianHenryIE/strauss` via `php bin/strauss dependencies`) on the same machine, same Linux filesystem, same vendor dependencies.
 
-| Project | Files | PHP | Rust | Speedup |
-|---------|-------|-----|------|---------|
-| Small (monolog) | 138 | 128 ms | 44 ms | **2.9x** |
-| Medium (monolog + guzzle + symfony) | 419 | 584 ms | 128 ms | **4.6x** |
-| Large (google/apiclient) | 33,363 | 45.3 s | 30.2 s | **1.5x** |
+| Project | Dependencies | PHP files | PHP Strauss | Rust strauss-rs | Speedup |
+|---------|-------------|-----------|-------------|-----------------|---------|
+| **Small** | monolog | 130 | 7,687 ms | 422 ms | **18.2x** |
+| **Medium** | monolog + guzzle + symfony/console | 410 | 17,908 ms | 1,515 ms | **11.8x** |
+| **Large** | google/apiclient | 33,364 | 25.5 min | 2.1 min | **12.3x** |
 
-> **Note:** The PHP benchmark only replaces namespaces (716 patterns). Rust replaces namespaces + classes + functions + constants (28,465 symbols). Comparing equal workloads, Rust is estimated **5-10x faster**.
+> **Environment:** WSL2 Ubuntu on Windows 11, PHP 8.3.30, Rust release build (`--release`, LTO enabled). Both tools ran on the native Linux filesystem to eliminate cross-mount I/O overhead. Each size was run 3 times; averages shown (Large ran once due to PHP Strauss taking 25+ minutes).
 
-### Key optimizations
+### Why is it faster?
 
-- **tree-sitter** for PHP parsing (~50x faster than nikic/php-parser)
-- **Per-file reference filtering** — each file only matches against symbols it actually uses, not the entire symbol table
-- **Aho-Corasick** single-pass multi-pattern replacement (O(n) per file)
-- **Rayon** parallel file processing across all CPU cores
-- **Single-pass copy+prefix** — no separate copy/prefix/license passes
+| Optimization | PHP Strauss | Rust strauss-rs |
+|-------------|-------------|-----------------|
+| PHP parsing | nikic/php-parser (~5ms/file) | tree-sitter (~0.1ms/file, **50x**) |
+| Parser instances | 4+ per file, no reuse | 1 per thread, reused |
+| Regex compilation | Per-file, per-namespace | Pre-compiled once, shared |
+| File I/O passes | 5+ sequential passes | Single-pass copy+prefix |
+| Parallelization | None (sequential) | Rayon parallel across all CPU cores |
+| Symbol matching | All symbols scanned per file | Per-file reference filtering (only relevant symbols) |
+| String replacement | Per-namespace regex + str_replace | Aho-Corasick single-pass O(n) |
+
+### Per-File Reference Filtering
+
+The key optimization for large projects. During parsing, each file's AST is walked to collect which symbols it actually references. In the transform phase, only those symbols are used for replacement — not the entire symbol table.
+
+For google/apiclient (28,465 symbols, 33,363 files):
+- **Without filtering:** 57,000-pattern Aho-Corasick per file → 25 minutes for Phase 3
+- **With filtering:** ~20-pattern mini-automaton per file → 4.6 seconds (**330x faster**)
 
 ## Installation
 

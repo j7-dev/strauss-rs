@@ -1,82 +1,120 @@
 # strauss-rs Benchmark Report
 
+> [繁體中文](BENCHMARK.zh-TW.md) | [English](README.md) | **Benchmark**
+
 ## Environment
-- **CPU**: Windows 11, AMD/Intel (system under test)
-- **Rust**: 1.94.0 (stable-x86_64-pc-windows-gnu)
-- **PHP**: 8.3.23 (for PHP Strauss comparison)
-- **Build**: Release profile (LTO enabled, codegen-units=1)
+
+- **OS**: Windows 11 Home (WSL2 Ubuntu for PHP Strauss)
+- **CPU**: AMD/Intel (system under test)
+- **Rust**: 1.94.0 (stable-x86_64-pc-windows-gnu), release build with LTO
+- **PHP**: 8.3.30 (WSL2 Ubuntu)
+- **PHP Strauss**: [BrianHenryIE/strauss](https://github.com/BrianHenryIE/strauss) (latest master)
 
 ## Test Projects
 
-### Small Project (5 files, 1 package)
-- **Package**: acme/greeter (3 PHP files + LICENSE + composer.json)
-- **Config**: namespace_prefix, classmap_prefix, constant_prefix
+| Size | Dependencies | Total files | PHP files |
+|------|-------------|------------|-----------|
+| **Small** | monolog | 147 | 130 |
+| **Medium** | monolog + guzzlehttp/guzzle + symfony/console | 494 | 410 |
+| **Large** | google/apiclient | 33,445 | 33,364 |
 
-### Medium Project (420 PHP files, 18 packages)
-- **Packages**: monolog/monolog, guzzlehttp/guzzle, symfony/console + all transitive dependencies
-- **Config**: namespace_prefix, classmap_prefix
-- **Total files**: 482 (420 PHP + 62 other)
+## End-to-End Results
 
-## Results
+Benchmarked against the **real PHP Strauss** (`php bin/strauss dependencies`) on the same machine, same native Linux filesystem, same vendor dependencies.
 
-### strauss-rs (Rust)
+| Project | PHP files | PHP Strauss | Rust strauss-rs | Speedup |
+|---------|-----------|-------------|-----------------|---------|
+| **Small** | 130 | 7,687 ms | 422 ms | **18.2x** |
+| **Medium** | 410 | 17,908 ms | 1,515 ms | **11.8x** |
+| **Large** | 33,364 | 1,528,770 ms (25.5 min) | 123,934 ms (2.1 min) | **12.3x** |
 
-| Project | Files | Cold Start | Warm (avg) | Phase 1 (Discover) | Phase 2 (Analyze) | Phase 3 (Transform) |
-|---------|-------|------------|------------|--------------------|--------------------|---------------------|
-| Small   | 5     | 34 ms      | **29 ms**  | ~0.5 ms            | ~1.5 ms            | ~12 ms              |
-| Medium  | 482   | 1,725 ms   | **315 ms** | ~5.5 ms            | ~40 ms             | ~70 ms (copy) + ~200 ms (replace) |
+> Each size was run 3 times with averages shown. Large was run once due to PHP Strauss taking 25+ minutes. Both tools ran on the native Linux filesystem to eliminate cross-mount I/O overhead.
 
-### PHP Strauss (estimated from known benchmarks)
+## Detailed Run Data
 
-| Project | Files | Typical Time |
-|---------|-------|-------------|
-| Small   | 5     | ~500 ms     |
-| Medium  | 482   | ~3,000-5,000 ms |
-| Large (google/apiclient) | 3000+ | **Hours** |
+### Small (monolog)
 
-> Note: PHP Strauss could not be benchmarked directly in this environment due to
-> Composer Factory path normalization issues in Git Bash on Windows.
-> PHP timing estimates are based on known performance characteristics from the
-> original Strauss codebase analysis (7+ sequential passes, per-file PHP-Parser
-> instantiation, no parallelization, per-file regex compilation).
+| Run | PHP Strauss | Rust strauss-rs |
+|-----|-------------|-----------------|
+| 1 | 7,710 ms (139 output files) | 426 ms (136 output files) |
+| 2 | 7,667 ms | 427 ms |
+| 3 | 7,685 ms | 414 ms |
+| **Avg** | **7,687 ms** | **422 ms** |
 
-## Speedup Analysis
+### Medium (monolog + guzzle + symfony/console)
 
-| Metric | PHP Strauss | strauss-rs | Speedup |
-|--------|-------------|-----------|---------|
-| Small (5 files) | ~500 ms | 29 ms | **~17x** |
-| Medium (482 files) warm | ~3,000 ms | 315 ms | **~10x** |
-| Medium (482 files) cold | ~3,000 ms | 1,725 ms | **~1.7x** |
-| Phase: File parsing | ~5 ms/file (nikic/php-parser) | ~0.1 ms/file (tree-sitter) | **~50x** |
-| Phase: Regex compilation | Per file, per namespace | Once, cached | **Eliminated** |
-| Parallelism | None | Rayon (all cores) | **Nx** |
+| Run | PHP Strauss | Rust strauss-rs |
+|-----|-------------|-----------------|
+| 1 | 17,839 ms (353 output files) | 1,647 ms (349 output files) |
+| 2 | 17,946 ms | 1,428 ms |
+| 3 | 17,939 ms | 1,470 ms |
+| **Avg** | **17,908 ms** | **1,515 ms** |
 
-### Key Optimizations Implemented
+### Large (google/apiclient)
 
-1. **Aho-Corasick for namespace replacement**: All namespaces replaced in a single O(n) pass
-   instead of one regex per namespace (eliminated 42,000 regex ops → 1 Aho-Corasick scan)
+| Run | PHP Strauss | Rust strauss-rs |
+|-----|-------------|-----------------|
+| 1 | 1,528,770 ms (33,374 output files) | 123,934 ms (33,019 output files) |
 
-2. **Aho-Corasick for constant replacement**: All constants in single pass
+## Phase Breakdown (Rust strauss-rs, Windows native)
 
-3. **tree-sitter for PHP parsing**: 50x faster than nikic/php-parser
+Measured on Windows with `--info` logging. Separate from the WSL comparison above.
 
-4. **Rayon parallel processing**: File copy + replacement runs on all CPU cores
+### Medium (410 PHP files, ~100 namespaces)
 
-5. **Single-pass copy+prefix**: Eliminated PHP's separate copy → prefix → license passes
+| Phase | Time | Description |
+|-------|------|-------------|
+| Phase 1: DISCOVER | ~5.5 ms | Dependency resolution, file enumeration |
+| Phase 2: ANALYZE | ~49 ms | tree-sitter parsing + symbol extraction + reference extraction |
+| Phase 3: TRANSFORM | ~68 ms | Per-file filtered replacement + write |
+| **Total** | **~128 ms** | |
 
-6. **Pre-computed replacement data**: Symbols collected once, reused for every file
+### Large (33,364 PHP files, 28,465 symbols)
 
-7. **DFA-based regex** (regex crate): No backtracking, guaranteed linear time
+| Phase | Time | Description |
+|-------|------|-------------|
+| Phase 1: DISCOVER | ~119 ms | Dependency resolution, file enumeration |
+| Phase 2: ANALYZE | ~22.9 s | tree-sitter parsing + symbol extraction + reference extraction |
+| Phase 3: TRANSFORM | ~4.6 s | Per-file filtered replacement + write |
+| **Total** | **~27.6 s** | |
+
+## Per-File Reference Filtering (Phase 3 optimization)
+
+The single biggest optimization. Instead of scanning every file against ALL symbols, each file is only matched against symbols it actually references.
+
+| Project | Symbols | Without filtering | With filtering | Speedup |
+|---------|---------|-------------------|----------------|---------|
+| Small | ~30 | 33 ms | 31 ms | ~1x |
+| Medium | ~100 | 270 ms | 68 ms | **4x** |
+| **Large** | **28,465** | **1,518,000 ms (25 min)** | **4,600 ms** | **330x** |
+
+How it works:
+- During Phase 2 tree-sitter parsing, each file's AST is walked to collect which symbols it references
+- Phase 3 builds a tiny per-file Aho-Corasick automaton (~20 patterns) instead of one monolithic automaton (57,000 patterns)
+- Result: O(files x avg_refs_per_file) instead of O(files x total_symbols)
+
+## Why is Rust Faster?
+
+| Optimization | PHP Strauss | Rust strauss-rs |
+|-------------|-------------|-----------------|
+| PHP parsing | nikic/php-parser (~5 ms/file) | tree-sitter (~0.1 ms/file, **50x**) |
+| Parser instances | 4+ per file, no reuse | 1 per thread, reused |
+| Regex compilation | Per-file, per-namespace | Pre-compiled once, shared |
+| File I/O passes | 5+ sequential passes | Single-pass copy+prefix |
+| Parallelization | None (sequential) | Rayon parallel across all CPU cores |
+| Symbol matching | All symbols scanned per file | Per-file reference filtering |
+| String replacement | Per-namespace regex + str_replace | Aho-Corasick single-pass O(n) |
+| Constant replacement | Sequential str_replace per constant | Aho-Corasick batch replacement |
 
 ## Output Verification
 
 Verified correct output on medium project:
-- `Monolog\Logger` → `Benchmark\StraussTest\Deps\Monolog\Logger` ✅
-- `GuzzleHttp\Client` → `Benchmark\StraussTest\Deps\GuzzleHttp\Client` ✅
-- `Psr\Http\Message` → `Benchmark\StraussTest\Deps\Psr\Http\Message` ✅
-- All `use` statements correctly updated ✅
-- Autoloader files generated ✅
-- License files copied ✅
+- `Monolog\Logger` -> `Benchmark\StraussTest\Deps\Monolog\Logger`
+- `GuzzleHttp\Client` -> `Benchmark\StraussTest\Deps\GuzzleHttp\Client`
+- `Psr\Http\Message` -> `Benchmark\StraussTest\Deps\Psr\Http\Message`
+- All `use` statements correctly updated
+- Autoloader files generated
+- License files copied
 
 ## Binary Size
 

@@ -1,5 +1,7 @@
 # strauss-rs
 
+> [繁體中文](README.zh-TW.md) | **English** | [Benchmark](BENCHMARK.md)
+
 High-performance PHP namespace prefixer written in Rust. Drop-in replacement for [BrianHenryIE/strauss](https://github.com/BrianHenryIE/strauss).
 
 Reads `composer.json` configuration, copies vendor dependencies to a target directory, and prefixes their PHP namespaces, classes, functions, and constants to avoid conflicts between WordPress plugins (or any PHP project sharing the same runtime).
